@@ -173,7 +173,7 @@ my:
   sub:
     hello: ""
   log:
-    directory: dirrrrr
+    directory: ""
     filename: ""
     dedicatedArg: ""
 
