@@ -1,0 +1,14 @@
+{
+	"my": {
+		"token": "some default value",
+		"count": 121,
+		"Sub": {
+			"Hello": ""
+		},
+		"log": {
+			"Directory": "",
+			"filename": "",
+			"dedicatedArg": ""
+		}
+	}
+}

@@ -1,0 +1,9 @@
+[my]
+  token = "some default value"
+  count = 121
+  [my.Sub]
+    Hello = ""
+  [my.log]
+    Directory = ""
+    filename = ""
+    dedicatedArg = ""
