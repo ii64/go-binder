@@ -1,6 +1,7 @@
 [my]
   token = "some default value"
   count = 121
+  Ktes = 0
   [my.Sub]
     Hello = ""
   [my.log]

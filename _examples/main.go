@@ -3,9 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/ii64/go-binder/binder"
 	"github.com/pkg/errors"
 )
@@ -14,8 +16,9 @@ type MyConfig struct {
 	Token string `json xml bson yaml toml arg:"token,omitempty" env:"TOKEN" environ:"TOKEN"`
 	Count int    `json xml bson yaml toml arg:"count,omitempty" env:"COUNT" usage:"this is the usage"`
 
-	Sub struct {
-		Hello string
+	Ktes *int
+	Sub  *struct {
+		Hello *string
 	}
 	Log struct {
 		Directory    string
@@ -63,7 +66,7 @@ func main() {
 	registerToBinder()
 	// perform binding
 	if err = binder.Init(); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
+		if errors.Is(err, os.ErrNotExist) || errors.Is(err, io.EOF) {
 			if err = binder.Save(); err != nil {
 				panic(err)
 			}
@@ -77,5 +80,6 @@ func main() {
 	defer binder.Close()
 
 	// runtime
-	fmt.Printf("%+#v\n", Loaded)
+	spew.Dump(Loaded)
+	// fmt.Printf("%+#v\n", Loaded)
 }

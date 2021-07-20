@@ -1,9 +1,10 @@
 my:
   token: some default value
   count: 121
+  ktes: 0
   sub:
     hello: ""
   log:
-    directory: dirrrrr
+    directory: ""
     filename: ""
     dedicatedArg: ""
