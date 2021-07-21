@@ -132,5 +132,8 @@ func Link(f interface{}) (interface{}, func(), func()) {
 	// linker is *struct
 	// recopyFieldsIn   linker -> component (actual config struct)
 	// recopyFieldsOut  linker <- component (actual config struct)
-	return linker.Interface(), recopyFieldsIn(el, v, f), recopyFieldsOut(el, v, f)
+	in := recopyFieldsIn(el, v, f)
+	out := recopyFieldsOut(el, v, f)
+	defer out()
+	return linker.Interface(), in, out
 }
