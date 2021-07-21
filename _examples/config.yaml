@@ -4,7 +4,12 @@ my:
   ktes: 0
   sub:
     hello: ""
+    subofsub:
+      insub: false
+    ptrofsub:
+      your_name: ""
   log:
+    sublog: 0
     directory: ""
     filename: ""
     dedicatedArg: ""

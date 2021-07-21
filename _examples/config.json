@@ -4,9 +4,16 @@
 		"count": 121,
 		"Ktes": 0,
 		"Sub": {
-			"Hello": ""
+			"Hello": "",
+			"SubOfSub": {
+				"InSub": false
+			},
+			"PtrOfSub": {
+				"your_name": ""
+			}
 		},
 		"log": {
+			"SubLog": 0,
 			"Directory": "",
 			"filename": "",
 			"dedicatedArg": ""

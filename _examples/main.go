@@ -17,10 +17,17 @@ type MyConfig struct {
 	Count int    `json xml bson yaml toml arg:"count,omitempty" env:"COUNT" usage:"this is the usage"`
 
 	Ktes *int
-	Sub  *struct {
-		Hello *string
+	Sub  **struct {
+		Hello    *string
+		SubOfSub struct {
+			InSub **bool
+		}
+		PtrOfSub *struct {
+			YourName **string `json xml bson yaml toml bind:"your_name,omitempty" env:"COUNT" usage:"this is the usage"`
+		}
 	}
 	Log struct {
+		SubLog       int
 		Directory    string
 		Filename     string `json xml bson yaml toml arg:"filename" env:"FILENAME"`
 		DedicatedArg string `json xml bson yaml toml argx:"dedicatedArg" env:"DEDICATED_ARG"`
@@ -81,5 +88,5 @@ func main() {
 
 	// runtime
 	spew.Dump(Loaded)
-	// fmt.Printf("%+#v\n", Loaded)
+	fmt.Printf("DONE!\n")
 }

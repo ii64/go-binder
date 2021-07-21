@@ -1,10 +1,15 @@
 [my]
   token = "some default value"
-  count = 121
+  count = 24243
   Ktes = 0
   [my.Sub]
     Hello = ""
+    [my.Sub.SubOfSub]
+      InSub = true
+    [my.Sub.PtrOfSub]
+      your_name = ""
   [my.log]
+    SubLog = 0
     Directory = ""
     filename = ""
     dedicatedArg = ""
