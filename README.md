@@ -54,19 +54,26 @@ import (
 )
 
 type MyConfig struct {
-    Token string `json xml bson yaml toml arg:"token" env:"TOKEN" environ:"TOKEN"`
-    Count int    `json xml bson yaml toml arg:"count" env:"COUNT" usage:"this is the usage"`
+    Token string `json xml bson yaml toml arg:"token,omitempty" env:"TOKEN" environ:"TOKEN"`
+    Count int    `json xml bson yaml toml arg:"count,omitempty" env:"COUNT" usage:"this is the usage"`
 
-    Sub struct {
-        Hello string
+    Ktes *int
+    Sub  **struct {
+        Hello    *string
+        SubOfSub struct {
+            InSub **bool
+        }
+        PtrOfSub *struct {
+            YourName **string `json xml bson yaml toml bind:"your_name,omitempty" env:"COUNT" usage:"this is the usage"`
+        }
     }
     Log struct {
+        SubLog       int
         Directory    string
         Filename     string `json xml bson yaml toml arg:"filename" env:"FILENAME"`
         DedicatedArg string `json xml bson yaml toml argx:"dedicatedArg" env:"DEDICATED_ARG"`
     } `json xml bson yaml toml arg env bind:"log"`
 }
-
 var (
     configFile = os    env("CONFIG_FILE")
     Loaded     *MyConfig
@@ -136,16 +143,25 @@ Output JSON:
     "my": {
         "token": "some default value",
         "count": 121,
+        "Ktes": 0,
         "Sub": {
-            "Hello": ""
+            "Hello": "",
+            "SubOfSub": {
+                "InSub": false
+            },
+            "PtrOfSub": {
+                "your_name": ""
+            }
         },
         "log": {
+            "SubLog": 0,
             "Directory": "",
             "filename": "",
             "dedicatedArg": ""
         }
     }
 }
+
 
 ```
 
@@ -155,9 +171,15 @@ Output TOML:
 [my]
   token = "some default value"
   count = 121
+  Ktes = 0
   [my.Sub]
     Hello = ""
+    [my.Sub.SubOfSub]
+      InSub = false
+    [my.Sub.PtrOfSub]
+      your_name = ""
   [my.log]
+    SubLog = 0
     Directory = ""
     filename = ""
     dedicatedArg = ""
@@ -170,9 +192,15 @@ Output YAML:
 my:
   token: some default value
   count: 121
+  ktes: 0
   sub:
     hello: ""
+    subofsub:
+      insub: false
+    ptrofsub:
+      your_name: ""
   log:
+    sublog: 0
     directory: ""
     filename: ""
     dedicatedArg: ""
