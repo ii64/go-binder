@@ -1,11 +1,11 @@
 [my]
   token = "some default value"
-  count = 24243
+  count = 121
   Ktes = 0
   [my.Sub]
     Hello = ""
     [my.Sub.SubOfSub]
-      InSub = true
+      InSub = false
     [my.Sub.PtrOfSub]
       your_name = ""
   [my.log]
