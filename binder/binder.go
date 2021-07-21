@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"strconv"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/pkg/errors"
@@ -18,6 +19,7 @@ var (
 	SaveConfig        SaveConfigFunc = defaultSaveConfig
 	SaveOnClose                      = false
 
+	TagName       = "bind"
 	TagMapDefault = ""
 )
 
@@ -45,7 +47,7 @@ type item struct {
 }
 
 func BindArgs(st interface{}, key string) (err error) {
-	mid, in, out := link(st)
+	mid, in, out := Link(st)
 	mappedConfUpdater[key] = &funcUpdater{
 		In: in, Out: out,
 	}
@@ -57,7 +59,7 @@ func BindArgs(st interface{}, key string) (err error) {
 }
 
 func BindConf(st interface{}, key string) (err error) {
-	mid, in, out := link(st)
+	mid, in, out := Link(st)
 	mappedConfUpdater[key] = &funcUpdater{
 		In: in, Out: out,
 	}
@@ -69,7 +71,7 @@ func BindConf(st interface{}, key string) (err error) {
 }
 
 func BindArgsConf(st interface{}, key string) (err error) {
-	mid, in, out := link(st)
+	mid, in, out := Link(st)
 	mappedConfUpdater[key] = &funcUpdater{
 		In: in, Out: out,
 	}
@@ -93,7 +95,7 @@ func Init() (err error) {
 			defer addBindArgs(k, s)
 		}
 		if s.bindConf {
-			addBindConf(k, s)
+			mappedConf[k] = s.val
 		}
 	}
 	var t MappedConfiguration
@@ -120,7 +122,6 @@ func Save() (err error) {
 }
 
 func In() {
-	// spew.Dump(mappedConf)
 	loadReupdate()
 }
 
@@ -148,6 +149,7 @@ func setBackMap(dst *MappedConfiguration, val MappedConfiguration) {
 		// spew.Dump(orig)
 
 		if src == nil {
+			// set back to component ?
 			continue
 		}
 
@@ -159,8 +161,8 @@ func setBackMap(dst *MappedConfiguration, val MappedConfiguration) {
 		if ival.Kind() == reflect.Ptr {
 			ival = ival.Elem()
 		}
-
-		// spew.Dump(iorig)
+		// fmt.Printf("IORIG ")
+		// spew.Dump(iorig.Interface())
 		ifaceToStruct(ival, iorig)
 		// spew.Dump(iorig)
 
@@ -183,19 +185,17 @@ func ifaceToStruct(ival reflect.Value, iorig reflect.Value) {
 		panic(fmt.Sprintf("convert is not supported : has key %s and val %s", vk, vv))
 	}
 
-	// fmt.Printf("\nsdsds %s %s\n\n", vk, vv)
-	// to := iorig.Type()
-	// for i := 0; i < iorig.NumField(); i++ {
-
-	// }
-	// if ival.Kind() != reflect.Map {
-	// 	conv := ival.Convert(iorig.Type())
-	// 	iorig.Set(conv)
-	// 	return
-	// }
-
 	// with the help of mapstructure! :D
-	if err := mapstructure.Decode(ival.Interface(), iorig.Interface()); err != nil {
+	dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		// result
+		Result: iorig.Interface(),
+		// use bind:"" instead of mapstructure:""
+		TagName: TagName,
+	})
+	if err != nil {
+		panic(errors.Wrap(err, "mapstructure init error"))
+	}
+	if err = dec.Decode(ival.Interface()); err != nil {
 		panic(errors.Wrap(err, "mapstructure error"))
 	}
 	// spew.Dump(iorig.Interface())
@@ -207,151 +207,54 @@ func addBindArgs(key string, s *item) {
 	instFields(key, v, wrapperUnwind(wrapperOSEnv(RegisterCmdArgs)))
 }
 
-func addBindConf(key string, s *item) {
-	v := reflect.ValueOf(s.val)
-	_ = v
-	instFields(key, v, wrapperUnwind(wrapperOSEnv(defaultRegisterConf)))
-	mappedConf[key] = s.val
-}
-
-//
-func instFields(parent string, t reflect.Value, eachFieldF RegisterFunc) {
-	if eachFieldF == nil {
-		return
-	}
-
+func instFields(parent string, v reflect.Value, fc RegisterFunc) {
+	t := v.Type()
 	if t.Kind() == reflect.Ptr {
-		instFields(parent, t.Elem(), eachFieldF)
+		if v.IsNil() {
+			FillValue(v)
+		}
+		instFields(parent, v.Elem(), fc)
 		return
 	}
-	tt := t.Type()
-	// fmt.Printf("%+#v %+#v\n", t, t.Kind() == reflect.Ptr)
-	if prefix := tt.Name(); prefix != "" {
-		if parent == "" {
-			parent = prefix
-		}
-	}
-	for i := 0; i < t.NumField(); i++ {
-		f := t.Field(i)
-		c := tt.Field(i)
-		// fmt.Printf("got val %s %+#v\n", f.Kind(), f.Interface())
+	if t.Kind() == reflect.Struct {
+		for i := 0; i < t.NumField(); i++ {
+			f := t.Field(i)
+			t := f.Type
+			fd := v.Field(i)
 
-		k := f
-		for k.Kind() == reflect.Ptr {
-			if t := k.Elem(); t.Kind() != reflect.Ptr {
-				// fmt.Printf("?> %+#v\n", t.Interface())
-				if t.Kind() == reflect.Struct {
-					instSub(parent, c, f, eachFieldF)
+			fd, _ = UnwindValue(fd, true, true)
+			t, _ = UnwindType(t, false)
+
+			bindTagVal := f.Tag.Get(TagName)
+			if bindTagVal != "" {
+				bindTagValParsed := SplitTagValue(bindTagVal)
+				if len(bindTagValParsed) > 0 {
+					bindTagVal = bindTagValParsed[0]
 				}
-				break
-			} else {
-				if t.IsNil() {
-					nt := reflect.New(t.Type().Elem())
-					t.Set(nt)
-				}
-				k = t
-				// fmt.Printf(">> %+#v\n", k.Interface())
 			}
-		}
-
-		// if f.Kind() == reflect.Struct {
-		// 	instSub(parent, c, f, eachFieldF)
-		// 	continue
-		// }
-
-		// if f.Kind() == reflect.Ptr {
-		// 	newVal := f
-		// 	if f.IsNil() {
-		// 		newVal = reflect.New(f.Type().Elem())
-		// 		f.Set(newVal)
-		// 	}
-
-		// 	var n reflect.Value
-		// 	unwind := f.Type().Elem()
-		// 	// fmt.Printf("uw %s\n", unwind)
-
-		// 	// unwind = unwind.Elem()
-		// 	for unwind.Kind() == reflect.Ptr && newVal.Elem().IsNil() {
-		// 		// fmt.Printf("unwind %s\n", unwind)
-		// 		unwind = unwind.Elem()
-		// 		// fmt.Printf("unwind el %s\n", unwind)
-		// 		n = reflect.New(unwind)
-		// 		newVal.Elem().Set(n)
-		// 		newVal = n
-		// 	}
-
-		// 	if f.Type().Elem().Kind() == reflect.Struct {
-		// 		instSub(parent, c, f, eachFieldF)
-		// 		continue
-		// 	}
-		// }
-		eachFieldF(parent, c, f)
-	}
-}
-
-func instSub(parent string, sf reflect.StructField, v reflect.Value, fc RegisterFunc) {
-	if v.Kind() == reflect.Ptr {
-		// initialize nil pointer
-		next := v.Elem()
-		if next.Kind() == reflect.Invalid { // nil
-			// v.SetPointer(unsafe.Pointer(reflect.New(v.Type()).Pointer()))
-			// val := reflect.New(sf.Type.Elem())
-			val := reflect.New(v.Type().Elem())
-			// fmt.Printf("%s [%s] %+#v %s\n", parent, sf.Name, val, sf.Type)
-
-			v.Set(val)
-			next = v.Elem()
-		}
-		instSub(parent, sf, next, fc)
-		return
-	}
-	// fmt.Printf("%s %s %+#v\n", v.Kind(), sf.Type, v.Kind() == reflect.Ptr)
-	if v.Kind() != reflect.Struct {
-		fc(parent, sf, v)
-		return
-	}
-	tt := v.Type()
-	bindName := sf.Tag.Get("bind")
-	bindNameParsed := SplitTagValue(bindName)
-	if len(bindNameParsed) > 0 && bindNameParsed[0] != "" {
-		bindName = bindNameParsed[0]
-		if parent != "" {
-			parent = parent + "." + bindName
-		} else {
-			parent = bindName
-		}
-	} else if prefix := v.Type().Name(); prefix != "" {
-		if parent != "" {
-			parent = parent + "." + prefix
-		} else {
-			parent = prefix
-		}
-	} else if prefix = sf.Name; prefix != "" {
-		if parent != "" {
-			parent = parent + "." + prefix
-		} else {
-			parent = prefix
-		}
-	}
-	for i := 0; i < v.NumField(); i++ {
-		f := v.Field(i)
-		c := tt.Field(i)
-
-		k := f
-		for k.Kind() == reflect.Ptr {
-			if t := k.Elem(); t.Kind() != reflect.Ptr {
-				break
-			} else {
-				if t.IsNil() {
-					nt := reflect.New(t.Type().Elem())
-					t.Set(nt)
-				}
-				k = t
+			bindName := f.Name
+			if bindTagVal != "" {
+				bindName = bindTagVal
 			}
-		}
 
-		// fmt.Printf("fc %+#v %+#v %+#v\n", f.Interface(), f.Elem(), k.Interface())
-		fc(parent, c, f)
+			if bindName == "-" {
+				// skip field if bind:"-"
+				continue
+			}
+
+			sub := parent
+			if sub == "" {
+				sub = bindName
+			} else {
+				sub = sub + "." + bindName
+			}
+			if t.Kind() == reflect.Struct {
+				instFields(sub, fd, fc)
+				continue
+			}
+			//
+			fc(parent, f, fd)
+		}
 	}
 }
 
@@ -408,11 +311,42 @@ func wrapperOSEnv(f RegisterFunc) RegisterFunc {
 			}
 		}
 
-		// fmt.Printf("checking env %+#v\n", envName)
 		val, ok := os.LookupEnv(envName)
 		if ok {
-			// fmt.Printf("header exists!! %+#v\n", envName)
-			fieldValue.Elem().Set(reflect.ValueOf(val))
+			v := convertStringToType(val, fieldValue.Type())
+			fieldValue.Elem().Set(v)
 		}
 	}
+}
+
+func convertStringToType(s string, t reflect.Type) reflect.Value {
+	t, _ = UnwindType(t, false)
+	var ret interface{} = s
+	switch t.Kind() {
+	case reflect.Bool:
+		ret, _ = strconv.ParseBool(s)
+	case reflect.Int:
+		ret, _ = strconv.Atoi(s)
+	case reflect.Int16:
+		tmp, _ := strconv.ParseInt(s, 10, 16)
+		ret = tmp
+	case reflect.Int32:
+		tmp, _ := strconv.ParseInt(s, 10, 32)
+		ret = tmp
+	case reflect.Int64:
+		ret, _ = strconv.ParseInt(s, 10, 64)
+	case reflect.Float32:
+		tmp, _ := strconv.ParseFloat(s, 32)
+		ret = tmp
+	case reflect.Float64:
+		ret, _ = strconv.ParseFloat(s, 64)
+	case reflect.Uint:
+	case reflect.Uint32:
+		tmp, _ := strconv.ParseUint(s, 10, 32)
+		ret = tmp
+	case reflect.Uint64:
+		tmp, _ := strconv.ParseUint(s, 10, 64)
+		ret = tmp
+	}
+	return reflect.ValueOf(ret)
 }

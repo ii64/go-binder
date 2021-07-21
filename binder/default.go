@@ -19,7 +19,12 @@ func defaultRegisterCmdArgsFlagStd(parent string, fieldType reflect.StructField,
 
 	if len(argxNameParsed) > 0 && argxNameParsed[0] != "" {
 		argxName = argxNameParsed[0]
+		if argxName == "-" {
+			return // skip flag binding if argx:"-"
+		}
 		argName = argxName
+	} else if argName == "-" {
+		return // skip flag binding if arg:"-"
 	} else if argName == "" {
 		if parent != "" {
 			argName = parent + "." + fieldType.Name
@@ -58,11 +63,6 @@ func defaultRegisterCmdArgsFlagStd(parent string, fieldType reflect.StructField,
 		flag.StringVar(val, argName, *val, argUsage)
 
 	}
-}
-
-func defaultRegisterConf(parent string, fieldType reflect.StructField, fieldValue reflect.Value) {
-	// fmt.Printf("CONF %s: %s [%s] has value %+#v  [%s]\n", parent, fieldType.Name, fieldType.Type, fieldValue, fieldType.Tag)
-	// fmt.Printf("json tag:%q\n", fieldType.Tag.Get("json"))
 }
 
 func defaultLoadConfig(mc *MappedConfiguration) error {
