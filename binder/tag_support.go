@@ -44,7 +44,7 @@ func ParseTag(tag string) (value map[string]string) {
 		for i < len(tag) && tag[i] == ' ' {
 			i++
 		}
-		for i < len(tag) && tag[i] != ' ' && tag[i] != ':' && (i+1 >= len(tag) || tag[i+1] != '"') {
+		for i < len(tag) && tag[i] != ' ' && tag[i] != ':' {
 			i++
 		}
 		for prev < len(tag) && tag[prev] == ' ' {
@@ -57,8 +57,17 @@ func ParseTag(tag string) (value map[string]string) {
 		i = 0
 		if len(tag) != 0 && tag[0] == ':' {
 			prev = 1
-			i = 2
-			for i < len(tag) && tag[i] != '"' {
+			i = 1
+			del := tag[i]
+			if del == '\'' || del == '`' {
+				panic("unexpected quote found")
+			}
+			if del != '"' {
+				del = ' '
+			} else {
+				i++
+			}
+			for i < len(tag) && tag[i] != del {
 				if tag[i] == '\\' {
 					i++
 				}
@@ -66,14 +75,16 @@ func ParseTag(tag string) (value map[string]string) {
 			}
 			if i >= len(tag) {
 				qvalue = tag[prev:]
-			} else {
+			} else if del != ' ' {
 				qvalue = string(tag[prev : i+1])
 				tag = tag[i+1:]
-			}
-
-			var err error
-			if qvalue, err = strconv.Unquote(qvalue); err != nil {
-				break
+				var err error
+				if qvalue, err = strconv.Unquote(qvalue); err != nil {
+					break
+				}
+			} else {
+				qvalue = string(tag[prev:i])
+				tag = tag[i:]
 			}
 		}
 		value[tmp] = qvalue
