@@ -36,7 +36,6 @@ func JoinTag(tag map[string]string) reflect.StructTag {
 }
 func ParseTag(tag string) (value map[string]string) {
 	value = map[string]string{}
-	var tmp = []string{}
 	i := 0
 	prev := 0
 	for tag != "" {
@@ -45,41 +44,50 @@ func ParseTag(tag string) (value map[string]string) {
 		for i < len(tag) && tag[i] == ' ' {
 			i++
 		}
-		for i < len(tag) && tag[i] != ':' && tag[i+1] != '"' {
-			if tag[i] == ' ' {
-				tmp = append(tmp, tag[prev:i])
-				prev = i + 1
-			}
+		for i < len(tag) && tag[i] != ' ' && tag[i] != ':' {
 			i++
 		}
 		for prev < len(tag) && tag[prev] == ' ' {
 			prev++
 		}
-		tmp = append(tmp, tag[prev:i])
+		tmp := tag[prev:i]
+		qvalue := ""
+		tag = tag[i:]
 		prev = 0
-		tag = tag[i+1:]
-
-		i = 1
-		for i < len(tag) && tag[i] != '"' {
-			if tag[i] == '\\' {
+		i = 0
+		if len(tag) != 0 && tag[0] == ':' {
+			prev = 1
+			i = 1
+			del := tag[i]
+			if del == '\'' || del == '`' {
+				panic("unexpected quote found")
+			}
+			if del != '"' {
+				del = ' '
+			} else {
 				i++
 			}
-			i++
+			for i < len(tag) && tag[i] != del {
+				if tag[i] == '\\' {
+					i++
+				}
+				i++
+			}
+			if i >= len(tag) {
+				qvalue = tag[prev:]
+			} else if del != ' ' {
+				qvalue = string(tag[prev : i+1])
+				tag = tag[i+1:]
+				var err error
+				if qvalue, err = strconv.Unquote(qvalue); err != nil {
+					break
+				}
+			} else {
+				qvalue = string(tag[prev:i])
+				tag = tag[i:]
+			}
 		}
-		if i >= len(tag) {
-			break
-		}
-		qvalue := string(tag[prev : i+1])
-		tag = tag[i+1:]
-
-		var err error
-		if qvalue, err = strconv.Unquote(qvalue); err != nil {
-			break
-		}
-		for _, k := range tmp {
-			value[k] = qvalue
-		}
-		tmp = []string{}
+		value[tmp] = qvalue
 	}
 	return
 }
