@@ -31,6 +31,8 @@ The `<parent>` is a placeholder for parent key, `binder.BindArgs(Loaded, "my")` 
 | `env:"token"`     | `os env("<parent>.token")`                              | Used for binding to environment variable with contextual key `<parent>`           |
 | `environ:"token"` | `os env("token")`                                       | Used for binding to environment                                                   |
 | `usage:"<DESC>"`  | Used as `argUsage`                                      | Description for flag                                                              |
+| `ignore:"true"`   | _No equivalent_                                         | Ignore struct field                                                               |
+| `bind:"abc"`      | _No equivalent_                                         | Used for mapstructure (`bind` is default value of `binder.TagName`)               |
 
 Other:
 
