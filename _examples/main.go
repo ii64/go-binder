@@ -13,6 +13,7 @@ import (
 )
 
 type MyConfig struct {
+	hello string
 	Token string `json xml bson yaml toml arg:"token,omitempty" env:"TOKEN" environ:"TOKEN"`
 	Count int    `json xml bson yaml toml arg:"count,omitempty" env:"COUNT" usage:"this is the usage"`
 
