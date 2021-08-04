@@ -1,11 +1,12 @@
 <img src="go-binder.png" alt="go-binder" width="35%"/>
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE) 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Go Reference](https://pkg.go.dev/badge/github.com/ii64/go-binder.svg)](https://pkg.go.dev/github.com/ii64/go-binder)
+[![DeepSource](https://deepsource.io/gh/ii64/go-binder.svg/?label=active+issues&show_trend=true&token=vJ6MknNoKFjEe4Fr1cTdsP0x)](https://deepsource.io/gh/ii64/go-binder/?ref=repository-badge)
 
 ✨Binding configuration and command flag made easy!✨
 
-You can use multiple keys tag to simplify the look like this [(supported feature**)](https://github.com/golang/go/issues/40281):
+You can use multiple keys tag to simplify the look like this [(supported feature\*\*)](https://github.com/golang/go/issues/40281):
 
 ```go
 // single tag key
@@ -22,14 +23,14 @@ Below is default mapping implementation of `binder.RegisterCmdArgs = defaultRegi
 
 The `<parent>` is a placeholder for parent key, `binder.BindArgs(Loaded, "my")` this case `<parent>` will be replaced with `my`, if there's field with type `struct` in the component, it'll be replaced to `my.<struct name | arg value>.<field name | arg>`
 
-| Tag | Go Code | Description |
-|-|-|-|
-| `arg:"token"` | `flag.StringVar(val, "<parent>.token", *val, argUsage)` | Used for binding flag with contextual key `<parent>` |
-| `argx:"token"` | `flag.StringVar(val, "token", *val, argUsage)` | Used for binding flag |
-| `bind:"log"` | _No equivalent_ | Used for binder to differ `struct` parent sub context `<parent>.log.<field name>` |
-| `env:"token"` | `os    env("<parent>.token")` | Used for binding to environment variable with contextual key `<parent>` |
-| `environ:"token"` | `os    env("token")` | Used for binding to environment |
-| `usage:"<DESC>"` | Used as `argUsage` | Description for flag |
+| Tag               | Go Code                                                 | Description                                                                       |
+| ----------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `arg:"token"`     | `flag.StringVar(val, "<parent>.token", *val, argUsage)` | Used for binding flag with contextual key `<parent>`                              |
+| `argx:"token"`    | `flag.StringVar(val, "token", *val, argUsage)`          | Used for binding flag                                                             |
+| `bind:"log"`      | _No equivalent_                                         | Used for binder to differ `struct` parent sub context `<parent>.log.<field name>` |
+| `env:"token"`     | `os env("<parent>.token")`                              | Used for binding to environment variable with contextual key `<parent>`           |
+| `environ:"token"` | `os env("token")`                                       | Used for binding to environment                                                   |
+| `usage:"<DESC>"`  | Used as `argUsage`                                      | Description for flag                                                              |
 
 Other:
 
@@ -140,29 +141,27 @@ Output JSON:
 
 ```json
 {
-    "my": {
-        "token": "some default value",
-        "count": 121,
-        "Ktes": 0,
-        "Sub": {
-            "Hello": "",
-            "SubOfSub": {
-                "InSub": false
-            },
-            "PtrOfSub": {
-                "your_name": ""
-            }
-        },
-        "log": {
-            "SubLog": 0,
-            "Directory": "",
-            "filename": "",
-            "dedicatedArg": ""
-        }
+  "my": {
+    "token": "some default value",
+    "count": 121,
+    "Ktes": 0,
+    "Sub": {
+      "Hello": "",
+      "SubOfSub": {
+        "InSub": false
+      },
+      "PtrOfSub": {
+        "your_name": ""
+      }
+    },
+    "log": {
+      "SubLog": 0,
+      "Directory": "",
+      "filename": "",
+      "dedicatedArg": ""
     }
+  }
 }
-
-
 ```
 
 Output TOML:
@@ -204,7 +203,6 @@ my:
     directory: ""
     filename: ""
     dedicatedArg: ""
-
 ```
 
 ### Note
