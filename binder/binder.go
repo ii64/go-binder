@@ -19,8 +19,7 @@ var (
 	SaveConfig        SaveConfigFunc = defaultSaveConfig
 	SaveOnClose                      = false
 
-	TagName       = "bind"
-	TagMapDefault = ""
+	TagName = "bind"
 )
 
 var (
@@ -221,6 +220,10 @@ func instFields(parent string, v reflect.Value, fc RegisterFunc) {
 			f := t.Field(i)
 			t := f.Type
 			fd := v.Field(i)
+
+			if isPrivateFieldOrSkip(f) {
+				continue
+			}
 
 			fd, _ = UnwindValue(fd, true, true)
 			t, _ = UnwindType(t, false)

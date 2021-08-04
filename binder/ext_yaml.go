@@ -8,7 +8,7 @@ import (
 )
 
 func LoadConfigYAML(path string) LoadConfigFunc {
-	TagMapDefault = "yaml"
+	TagName = "yaml"
 	return func(mc *MappedConfiguration) (err error) {
 		var f *os.File
 		if f, err = os.Open(path); err != nil {

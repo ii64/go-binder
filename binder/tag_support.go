@@ -12,13 +12,12 @@ func SplitTagValue(value string) []string {
 
 func reTag(f reflect.StructField, tags *reflect.StructTag) {
 	a := ParseTag(string(*tags))
-	if v, ok := a["mapstructure"]; !ok || v == "" {
-		a["mapstructure"] = f.Name
-		if overrideTagValue, ok := a[TagMapDefault]; ok && overrideTagValue != "" {
-			a["mapstructure"] = overrideTagValue
+	if v, ok := a[TagName]; !ok || v == "" {
+		a[TagName] = f.Name
+		if overrideTagValue, ok := a[TagName]; ok && overrideTagValue != "" {
+			a[TagName] = overrideTagValue
 		}
 	}
-	// fmt.Printf("%+#v %+#v\n", TagMapDefault, a)
 	*tags = JoinTag(a)
 }
 
@@ -38,6 +37,7 @@ func ParseTag(tag string) (value map[string]string) {
 	value = map[string]string{}
 	i := 0
 	prev := 0
+	prevKey := []string{}
 	for tag != "" {
 		prev = 0
 		i = 0
@@ -55,7 +55,7 @@ func ParseTag(tag string) (value map[string]string) {
 		tag = tag[i:]
 		prev = 0
 		i = 0
-		if len(tag) != 0 && tag[0] == ':' {
+		if tag != "" && tag[0] == ':' {
 			prev = 1
 			i = 1
 			del := tag[i]
@@ -86,8 +86,23 @@ func ParseTag(tag string) (value map[string]string) {
 				qvalue = string(tag[prev:i])
 				tag = tag[i:]
 			}
+			prevKey = append(prevKey, tmp)
+			for _, pk := range prevKey {
+				if _, ok := value[pk]; !ok {
+					value[pk] = qvalue
+				}
+			}
+			prevKey = []string{}
 		}
-		value[tmp] = qvalue
+		prevKey = append(prevKey, tmp)
+		if len(tag) < 1 {
+			for _, pk := range prevKey {
+				if _, ok := value[pk]; !ok {
+					value[pk] = qvalue
+				}
+			}
+			prevKey = []string{}
+		}
 	}
 	return
 }

@@ -8,7 +8,7 @@ import (
 )
 
 func LoadConfigTOML(path string) LoadConfigFunc {
-	TagMapDefault = "toml"
+	TagName = "toml"
 	return func(mc *MappedConfiguration) (err error) {
 		if _, err = toml.DecodeFile(path, mc); err != nil {
 			err = errors.Wrap(err, "load_cfg_toml")

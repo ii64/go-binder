@@ -15,9 +15,10 @@ func TestParse_short(t *testing.T) {
 }
 
 func TestParse_short_long(t *testing.T) {
+	// 'json' and 'arg' will have the same value
 	v := ParseTag("json arg:\"abc\"")
 	r := map[string]string{
-		"json": "",
+		"json": "abc",
 		"arg":  "abc",
 	}
 	assert.Equal(t, r, v)

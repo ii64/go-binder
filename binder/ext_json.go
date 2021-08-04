@@ -8,7 +8,7 @@ import (
 )
 
 func LoadConfigJSON(path string) LoadConfigFunc {
-	TagMapDefault = "json"
+	TagName = "json"
 	return func(mc *MappedConfiguration) (err error) {
 		var f *os.File
 		if f, err = os.Open(path); err != nil {

@@ -2,6 +2,7 @@ package binder
 
 import (
 	"reflect"
+	"unicode"
 )
 
 func invokeLinInkMethodIfExist(f interface{}) {
@@ -26,7 +27,13 @@ func recopyFieldsIn(src, dst reflect.Value, orig interface{}) func() {
 		// fmt.Printf("innnnnnnnnnn %+#v\n", src)
 		for i := 0; i < src.NumField(); i++ {
 			sf := src.Field(i)
+			stf := src.Type().Field(i)
 			df := dst.Field(i)
+			dtf := dst.Type().Field(i)
+
+			if isPrivateFieldOrSkip(stf) || isPrivateFieldOrSkip(dtf) {
+				continue
+			}
 
 			if sf.Kind() == reflect.Ptr {
 				sf, _ = UnwindValue(sf, false, true)
@@ -52,7 +59,13 @@ func recopyFieldsOut(src, dst reflect.Value, orig interface{}) func() {
 		defer invokeLinkOutMethodIfExist(orig)
 		for i := 0; i < src.NumField(); i++ {
 			sf := src.Field(i)
+			stf := src.Type().Field(i)
 			df := dst.Field(i)
+			dtf := dst.Type().Field(i)
+
+			if isPrivateFieldOrSkip(stf) || isPrivateFieldOrSkip(dtf) {
+				continue
+			}
 
 			if df.Kind() == reflect.Ptr {
 				df, _ = UnwindValue(df, false, true) // returned nil Value
@@ -136,4 +149,17 @@ func Link(f interface{}) (interface{}, func(), func()) {
 	out := recopyFieldsOut(el, v, f)
 	defer out()
 	return linker.Interface(), in, out
+}
+
+func isPrivateFieldOrSkip(sf reflect.StructField) bool {
+	if ignore := sf.Tag.Get("ignore"); ignore == "true" {
+		return true
+	}
+	if len(sf.Name) < 1 {
+		return true
+	}
+	if unicode.IsLower(rune(sf.Name[0])) {
+		return true
+	}
+	return false
 }
