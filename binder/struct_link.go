@@ -2,6 +2,7 @@ package binder
 
 import (
 	"reflect"
+	"strconv"
 	"unicode"
 )
 
@@ -151,9 +152,10 @@ func Link(f interface{}) (interface{}, func(), func()) {
 	return linker.Interface(), in, out
 }
 
-func isPrivateFieldOrSkip(sf reflect.StructField) bool {
-	if ignore := sf.Tag.Get("ignore"); ignore == "true" {
-		return true
+func isPrivateFieldOrSkip(sf reflect.StructField) (r bool) {
+	if ignore := sf.Tag.Get("ignore"); ignore != "" {
+		r, _ = strconv.ParseBool(ignore)
+		return
 	}
 	if len(sf.Name) < 1 {
 		return true
