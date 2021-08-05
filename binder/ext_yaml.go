@@ -25,7 +25,7 @@ func LoadConfigYAML(path string) LoadConfigFunc {
 	}
 }
 
-func SaveConfigYAML(path string) SaveConfigFunc {
+func SaveConfigYAML(path string, indent int) SaveConfigFunc {
 	return func(mc *MappedConfiguration) (err error) {
 		var f *os.File
 		if f, err = os.Create(path); err != nil {
@@ -34,7 +34,7 @@ func SaveConfigYAML(path string) SaveConfigFunc {
 		}
 		defer f.Close()
 		enc := yaml.NewEncoder(f)
-		enc.SetIndent(2)
+		enc.SetIndent(indent)
 		if err = enc.Encode(mc); err != nil {
 			err = errors.Wrap(err, "save_cfg_yaml")
 			return
