@@ -63,7 +63,7 @@ func main() {
 	case ".yaml":
 		// yaml
 		binder.LoadConfig = binder.LoadConfigYAML(configFile)
-		binder.SaveConfig = binder.SaveConfigYAML(configFile)
+		binder.SaveConfig = binder.SaveConfigYAML(configFile, 2)
 	case ".toml":
 		// toml
 		binder.LoadConfig = binder.LoadConfigTOML(configFile)
