@@ -2,8 +2,6 @@ package binder
 
 import (
 	"reflect"
-	"strconv"
-	"unicode"
 )
 
 func invokeLinInkMethodIfExist(f interface{}) {
@@ -150,18 +148,4 @@ func Link(f interface{}) (interface{}, func(), func()) {
 	out := recopyFieldsOut(el, v, f)
 	defer out()
 	return linker.Interface(), in, out
-}
-
-func isPrivateFieldOrSkip(sf reflect.StructField) (r bool) {
-	if ignore := sf.Tag.Get("ignore"); ignore != "" {
-		r, _ = strconv.ParseBool(ignore)
-		return
-	}
-	if len(sf.Name) < 1 {
-		return true
-	}
-	if unicode.IsLower(rune(sf.Name[0])) {
-		return true
-	}
-	return false
 }

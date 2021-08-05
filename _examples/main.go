@@ -19,9 +19,11 @@ type MyConfig struct {
 
 	Ktes *int
 	Sub  **struct {
-		Hello    *string
-		SubOfSub struct {
-			InSub **bool
+		nestedPrivate bool
+		Hello         *string
+		SubOfSub      struct {
+			soNestedPrivate ***int
+			InSub           **bool
 		}
 		PtrOfSub *struct {
 			YourName **string `json xml bson yaml toml bind:"your_name,omitempty" env:"COUNT" usage:"this is the usage"`

@@ -2,6 +2,8 @@ package binder
 
 import (
 	"reflect"
+	"strconv"
+	"unicode"
 )
 
 func UnwindType(v reflect.Type, usingLastPtr bool) (r reflect.Type, pc int) {
@@ -41,6 +43,10 @@ func FillValue(v reflect.Value) reflect.Value {
 	if v.Kind() == reflect.Struct {
 		for i := 0; i < v.NumField(); i++ {
 			f := v.Field(i)
+			ft := v.Type().Field(i)
+			if isPrivateFieldOrSkip(ft) {
+				continue
+			}
 			t := f.Type()
 			if t.Kind() == reflect.Ptr {
 				FillValue(f)
@@ -84,8 +90,17 @@ func CopyValue(src, dst reflect.Value) {
 		if src.Kind() == reflect.Struct {
 			for i := 0; i < src.NumField(); i++ {
 				sf := src.Field(i)
+				sft := src.Type().Field(i)
+				if isPrivateFieldOrSkip(sft) {
+					continue
+				}
 				sf, _ = UnwindValue(sf, true, false)
+
 				df := dst.Field(i)
+				dft := dst.Type().Field(i)
+				if isPrivateFieldOrSkip(dft) {
+					continue
+				}
 				df, _ = UnwindValue(df, true, false)
 
 				if src.Kind() == reflect.Struct {
@@ -99,4 +114,18 @@ func CopyValue(src, dst reflect.Value) {
 			dst.Set(src)
 		}
 	}
+}
+
+func isPrivateFieldOrSkip(sf reflect.StructField) (r bool) {
+	if ignore := sf.Tag.Get("ignore"); ignore != "" {
+		r, _ = strconv.ParseBool(ignore)
+		return
+	}
+	if len(sf.Name) < 1 {
+		return true
+	}
+	if unicode.IsLower(rune(sf.Name[0])) {
+		return true
+	}
+	return false
 }
