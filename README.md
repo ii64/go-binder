@@ -11,7 +11,7 @@ You can use multiple keys tag to simplify the look like this [(supported feature
 ```go
 // single tag key
 type MyConfig struct {
-    Token string `json:token_json" xml:"token_xml" arg:"token" env:"token" environ:"TOKEN"`
+    Token string `json:"token_json" xml:"token_xml" arg:"token" env:"token" environ:"TOKEN"`
 }
 // multiple tag keys
 type MyConfig struct {
