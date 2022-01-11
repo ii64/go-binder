@@ -1,22 +1,22 @@
 {
-	"my": {
-		"token": "some default value",
-		"count": 121,
-		"Ktes": 0,
-		"Sub": {
-			"Hello": "",
-			"SubOfSub": {
-				"InSub": false
-			},
-			"PtrOfSub": {
-				"your_name": ""
-			}
-		},
-		"log": {
-			"SubLog": 0,
-			"Directory": "",
-			"filename": "",
-			"dedicatedArg": ""
-		}
-	}
+  "my": {
+    "token": "nice",
+    "count": 121,
+    "Ktes": 0,
+    "Sub": {
+      "Hello": "",
+      "SubOfSub": {
+        "InSub": false
+      },
+      "PtrOfSub": {
+        "your_name": ""
+      }
+    },
+    "log": {
+      "SubLog": 0,
+      "Directory": "",
+      "filename": "",
+      "dedicatedArg": ""
+    }
+  }
 }
