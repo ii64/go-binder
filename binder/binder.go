@@ -88,7 +88,6 @@ func Init() (err error) {
 	// 2. args value            - tag "args"
 	// 3. env value             - tag "env"
 	// 4. configuration value   - from conf file
-
 	for k, s := range registered {
 		if s.bindEnvArgs {
 			defer addBindArgs(k, s)
@@ -101,6 +100,11 @@ func Init() (err error) {
 	defer func() {
 		setBackMap(&mappedConf, t)
 		loadReupdate()
+	}()
+	defer func() {
+		if t == nil { // prevent nil t passed to setBackMap
+			t = MappedConfiguration{}
+		}
 	}()
 	if err = LoadConfig(&t); err != nil {
 		return

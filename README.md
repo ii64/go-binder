@@ -53,6 +53,9 @@ import (
     "os"
 
     "github.com/ii64/go-binder/binder"
+    "github.com/ii64/go-binder/binder/ext/json"
+    "github.com/ii64/go-binder/binder/ext/toml"
+    "github.com/ii64/go-binder/binder/ext/yaml"
     "github.com/pkg/errors"
 )
 
@@ -78,7 +81,7 @@ type MyConfig struct {
     } `json xml bson yaml toml arg env bind:"log"`
 }
 var (
-    configFile = os    env("CONFIG_FILE")
+    configFile = os.Getenv("CONFIG_FILE")
     Loaded     *MyConfig
 )
 
@@ -95,8 +98,8 @@ func main() {
     if configFile == "" {
         configFile = "config.json"
     }
-    binder.LoadConfig = binder.LoadConfigJSON(configFile)
-    binder.SaveConfig = binder.SaveConfigJSON(configFile)
+    binder.LoadConfig = json.LoadConfig(configFile)
+    binder.SaveConfig = json.SaveConfig(configFile, "  ")
     binder.SaveOnClose = true
     // register component to binder
     registerToBinder()
