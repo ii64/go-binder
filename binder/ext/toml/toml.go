@@ -38,7 +38,7 @@ func LoadConfigBuffer(r io.Reader) binder.LoadConfigFunc {
 
 //
 
-func SaveConfig(path string, indent string) binder.SaveConfigFunc {
+func SaveConfig(path, indent string) binder.SaveConfigFunc {
 	return func(mc *binder.MappedConfiguration) error {
 		f, err := os.Create(path)
 		if err != nil {
