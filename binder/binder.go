@@ -88,7 +88,6 @@ func Init() (err error) {
 	// 2. args value            - tag "args"
 	// 3. env value             - tag "env"
 	// 4. configuration value   - from conf file
-
 	for k, s := range registered {
 		if s.bindEnvArgs {
 			defer addBindArgs(k, s)
@@ -101,6 +100,11 @@ func Init() (err error) {
 	defer func() {
 		setBackMap(&mappedConf, t)
 		loadReupdate()
+	}()
+	defer func() {
+		if t == nil { // prevent nil t passed to setBackMap
+			t = MappedConfiguration{}
+		}
 	}()
 	if err = LoadConfig(&t); err != nil {
 		return
@@ -170,7 +174,7 @@ func setBackMap(dst *MappedConfiguration, val MappedConfiguration) {
 	}
 }
 
-func ifaceToStruct(ival reflect.Value, iorig reflect.Value) {
+func ifaceToStruct(ival, iorig reflect.Value) {
 	if iorig.Kind() != reflect.Struct && (iorig.Kind() != reflect.Ptr && !iorig.IsNil() && iorig.Elem().Kind() == reflect.Struct) {
 		conv := ival.Convert(iorig.Type())
 		iorig.Set(conv)
@@ -278,11 +282,11 @@ func wrapperUnwind(f RegisterFunc) RegisterFunc {
 		defer f(parent, fieldType, fieldValue)
 
 		for fieldValue.Kind() == reflect.Ptr {
-			if t := fieldValue.Elem(); t.Kind() != reflect.Ptr {
+			var t reflect.Value
+			if t = fieldValue.Elem(); t.Kind() != reflect.Ptr {
 				break
-			} else {
-				fieldValue = t
 			}
+			fieldValue = t
 		}
 
 	}
@@ -308,10 +312,8 @@ func wrapperOSEnv(f RegisterFunc) RegisterFunc {
 		} else if envName == "" {
 			// don't lookup any
 			return
-		} else {
-			if parent != "" {
-				envName = parent + "." + envName
-			}
+		} else if parent != "" {
+			envName = parent + "." + envName
 		}
 
 		val, ok := os.LookupEnv(envName)

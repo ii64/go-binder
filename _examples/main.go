@@ -9,6 +9,9 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 	"github.com/ii64/go-binder/binder"
+	"github.com/ii64/go-binder/binder/ext/json"
+	"github.com/ii64/go-binder/binder/ext/toml"
+	"github.com/ii64/go-binder/binder/ext/yaml"
 	"github.com/pkg/errors"
 )
 
@@ -60,23 +63,28 @@ func main() {
 	switch ext {
 	case ".json":
 		// json
-		binder.LoadConfig = binder.LoadConfigJSON(configFile)
-		binder.SaveConfig = binder.SaveConfigJSON(configFile)
+		binder.LoadConfig = json.LoadConfig(configFile)
+		binder.SaveConfig = json.SaveConfig(configFile, "  ")
 	case ".yaml":
 		// yaml
-		binder.LoadConfig = binder.LoadConfigYAML(configFile)
-		binder.SaveConfig = binder.SaveConfigYAML(configFile, 2)
+		binder.LoadConfig = yaml.LoadConfig(configFile)
+		binder.SaveConfig = yaml.SaveConfig(configFile, 2)
 	case ".toml":
 		// toml
-		binder.LoadConfig = binder.LoadConfigTOML(configFile)
-		binder.SaveConfig = binder.SaveConfigTOML(configFile)
+		binder.LoadConfig = toml.LoadConfig(configFile)
+		binder.SaveConfig = toml.SaveConfig(configFile, "  ")
 	}
 	binder.SaveOnClose = true
 	// register component to binder
 	registerToBinder()
 	// perform binding
+
 	if err = binder.Init(); err != nil {
 		if errors.Is(err, os.ErrNotExist) || errors.Is(err, io.EOF) {
+
+			// it is necessary to reflect back computed structure to the original beneficiary (the MyConfig struct)
+			binder.In()
+
 			if err = binder.Save(); err != nil {
 				panic(err)
 			}
@@ -85,6 +93,7 @@ func main() {
 		}
 	}
 	flag.Parse()
+
 	// reflect back to component
 	binder.In()
 	defer binder.Close()
