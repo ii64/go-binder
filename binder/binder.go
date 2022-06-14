@@ -327,31 +327,47 @@ func wrapperOSEnv(f RegisterFunc) RegisterFunc {
 func convertStringToType(s string, t reflect.Type) reflect.Value {
 	t, _ = UnwindType(t, false)
 	var ret interface{} = s
+	var err error
 	switch t.Kind() {
 	case reflect.Bool:
-		ret, _ = strconv.ParseBool(s)
+		ret, err = strconv.ParseBool(s)
 	case reflect.Int:
-		ret, _ = strconv.Atoi(s)
+		ret, err = strconv.Atoi(s)
 	case reflect.Int16:
-		tmp, _ := strconv.ParseInt(s, 10, 16)
+		var tmp int64
+		tmp, err = strconv.ParseInt(s, 10, 16)
 		ret = tmp
 	case reflect.Int32:
-		tmp, _ := strconv.ParseInt(s, 10, 32)
+		var tmp int64
+		tmp, err = strconv.ParseInt(s, 10, 32)
 		ret = tmp
 	case reflect.Int64:
-		ret, _ = strconv.ParseInt(s, 10, 64)
+		ret, err = strconv.ParseInt(s, 10, 64)
 	case reflect.Float32:
-		tmp, _ := strconv.ParseFloat(s, 32)
+		var tmp float64
+		tmp, err = strconv.ParseFloat(s, 32)
 		ret = tmp
 	case reflect.Float64:
-		ret, _ = strconv.ParseFloat(s, 64)
+		ret, err = strconv.ParseFloat(s, 64)
 	case reflect.Uint:
+		var tmp uint64
+		tmp, err = strconv.ParseUint(s, 10, 0)
+		ret = tmp
 	case reflect.Uint32:
-		tmp, _ := strconv.ParseUint(s, 10, 32)
+		var tmp uint64
+		tmp, err = strconv.ParseUint(s, 10, 32)
 		ret = tmp
 	case reflect.Uint64:
-		tmp, _ := strconv.ParseUint(s, 10, 64)
+		var tmp uint64
+		tmp, err = strconv.ParseUint(s, 10, 64)
 		ret = tmp
+	case reflect.String:
+		ret = s
+	default:
+		panic(fmt.Sprintf("unsupported type conversion (%s)", t))
+	}
+	if err != nil {
+		panic(fmt.Sprintf("type reformat failed. (%q as %s)", s, t))
 	}
 	return reflect.ValueOf(ret)
 }

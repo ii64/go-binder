@@ -28,8 +28,8 @@ The `<parent>` is a placeholder for parent key, `binder.BindArgs(Loaded, "my")` 
 | `arg:"token"`     | `flag.StringVar(val, "<parent>.token", *val, argUsage)` | Used for binding flag with contextual key `<parent>`                              |
 | `argx:"token"`    | `flag.StringVar(val, "token", *val, argUsage)`          | Used for binding flag                                                             |
 | `bind:"log"`      | _No equivalent_                                         | Used for binder to differ `struct` parent sub context `<parent>.log.<field name>` |
-| `env:"token"`     | `os env("<parent>.token")`                              | Used for binding to environment variable with contextual key `<parent>`           |
-| `environ:"token"` | `os env("token")`                                       | Used for binding to environment                                                   |
+| `env:"token"`     | `os.Getenv("<parent>.token")`                           | Used for binding to environment variable with contextual key `<parent>`           |
+| `environ:"token"` | `os.Getenv("token")`                                    | Used for binding to environment                                                   |
 | `usage:"<DESC>"`  | Used as `argUsage`                                      | Description for flag                                                              |
 | `ignore:"true"`   | _No equivalent_                                         | Ignore struct field                                                               |
 | `bind:"abc"`      | _No equivalent_                                         | Used for mapstructure (`bind` is default value of `binder.TagName`)               |
@@ -44,170 +44,39 @@ More thing you can learn from the example below.
 
 ## Example
 
-```go
-package main
+See more on [example](./_examples/) directory.
 
-import (
-    "flag"
-    "fmt"
-    "os"
-
-    "github.com/ii64/go-binder/binder"
-    "github.com/ii64/go-binder/binder/ext/json"
-    "github.com/ii64/go-binder/binder/ext/toml"
-    "github.com/ii64/go-binder/binder/ext/yaml"
-    "github.com/pkg/errors"
-)
-
-type MyConfig struct {
-    Token string `json xml bson yaml toml arg:"token,omitempty" env:"TOKEN" environ:"TOKEN"`
-    Count int    `json xml bson yaml toml arg:"count,omitempty" env:"COUNT" usage:"this is the usage"`
-
-    Ktes *int
-    Sub  **struct {
-        Hello    *string
-        SubOfSub struct {
-            InSub **bool
-        }
-        PtrOfSub *struct {
-            YourName **string `json xml bson yaml toml bind:"your_name,omitempty" env:"COUNT" usage:"this is the usage"`
-        }
-    }
-    Log struct {
-        SubLog       int
-        Directory    string
-        Filename     string `json xml bson yaml toml arg:"filename" env:"FILENAME"`
-        DedicatedArg string `json xml bson yaml toml argx:"dedicatedArg" env:"DEDICATED_ARG"`
-    } `json xml bson yaml toml arg env bind:"log"`
-}
-var (
-    configFile = os.Getenv("CONFIG_FILE")
-    Loaded     *MyConfig
-)
-
-func registerToBinder() {
-    Loaded = &MyConfig{
-        Token: "some default value",
-        Count: 121,
-    }
-    binder.BindArgsConf(Loaded, "my")
-}
-
-func main() {
-    var err error
-    if configFile == "" {
-        configFile = "config.json"
-    }
-    binder.LoadConfig = json.LoadConfig(configFile)
-    binder.SaveConfig = json.SaveConfig(configFile, "  ")
-    binder.SaveOnClose = true
-    // register component to binder
-    registerToBinder()
-    // perform binding
-    if err = binder.Init(); err != nil {
-        if errors.Is(err, os.ErrNotExist) {
-            if err = binder.Save(); err != nil {
-                panic(err)
-            }
-        } else {
-            panic(err)
-        }
-    }
-    flag.Parse()
-    // reflect back to component
-    binder.In()
-    defer binder.Close()
-
-    // runtime
-    fmt.Printf("%+#v\n", Loaded)
-}
-```
-
-Output help:
 
 ```text
-$ main -h
-Usage of main:
+$ ./main -h
+Filename "config.json" ext ".json"
+Usage of ./main:
   -dedicatedArg string
-
+    
+  -my.Ktes int
+    
   -my.Sub.Hello string
-
+    
+  -my.Sub.PtrOfSub.YourName string
+        this is the usage
+  -my.Sub.SubOfSub.InSub
+    
   -my.count int
         this is the usage (default 121)
   -my.log.Directory string
-
+    
+  -my.log.SubLog int
+    
   -my.log.filename string
-
+    
+  -my.mycount int
+        this is the usage mycount
+  -my.mystring string
+        this is the usage mystring
+  -my.stringslice value
+        a string slice arg
   -my.token string
          (default "some default value")
-```
-
-Output JSON:
-
-```json
-{
-  "my": {
-    "token": "some default value",
-    "count": 121,
-    "Ktes": 0,
-    "Sub": {
-      "Hello": "",
-      "SubOfSub": {
-        "InSub": false
-      },
-      "PtrOfSub": {
-        "your_name": ""
-      }
-    },
-    "log": {
-      "SubLog": 0,
-      "Directory": "",
-      "filename": "",
-      "dedicatedArg": ""
-    }
-  }
-}
-```
-
-Output TOML:
-
-```toml
-[my]
-  token = "some default value"
-  count = 121
-  Ktes = 0
-  [my.Sub]
-    Hello = ""
-    [my.Sub.SubOfSub]
-      InSub = false
-    [my.Sub.PtrOfSub]
-      your_name = ""
-  [my.log]
-    SubLog = 0
-    Directory = ""
-    filename = ""
-    dedicatedArg = ""
-
-```
-
-Output YAML:
-
-```yaml
-my:
-  token: some default value
-  count: 121
-  ktes: 0
-  sub:
-    hello: ""
-    subofsub:
-      insub: false
-    ptrofsub:
-      your_name: ""
-  log:
-    sublog: 0
-    directory: ""
-    filename: ""
-    dedicatedArg: ""
 ```
 
 ### Note
