@@ -1,6 +1,11 @@
 my:
-  token: nice
+  token: some default value
   count: 121
+  mycount: 0
+  mystring: ""
+  stringslice:
+    - "123"
+    - "1234"
   ktes: 0
   sub:
     hello: ""

@@ -15,10 +15,17 @@ import (
 	"github.com/pkg/errors"
 )
 
+type myint int
+type mystring string
+
 type MyConfig struct {
 	hello string
 	Token string `json xml bson yaml toml arg:"token,omitempty" env:"TOKEN" environ:"TOKEN"`
 	Count int    `json xml bson yaml toml arg:"count,omitempty" env:"COUNT" usage:"this is the usage"`
+
+	MyCount     myint    `json xml bson yaml toml arg:"mycount,omitempty" env:"MYCOUNT" usage:"this is the usage mycount"`
+	MyString    mystring `json xml bson yaml toml arg:"mystring,omitempty" env:"MYSTRING" usage:"this is the usage mystring"`
+	StringSlice []string `json xml bson yaml toml arg:"stringslice,omitempty" usage:"a string slice arg"`
 
 	Ktes *int
 	Sub  **struct {

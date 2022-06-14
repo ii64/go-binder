@@ -5,9 +5,16 @@ import (
 	"github.com/ii64/go-binder/binder"
 )
 
+type myint int
+type mystring string
+
 type MyConfig struct {
 	Token string
 	Count int
+
+	MyCounter   myint
+	MyString    mystring
+	StringSlice []string
 
 	Ktes *int
 	Sub  *struct {
@@ -29,7 +36,23 @@ type MyConfig struct {
 
 var (
 	TMap   = map[string]interface{}{}
-	Loaded = &MyConfig{}
+	Loaded = &MyConfig{
+		Token:     "",
+		Count:     0,
+		MyCounter: 0,
+		Ktes:      new(int),
+		Sub: &struct {
+			Hello    *string
+			SubOfSub struct{ InSub bool }
+			PtrOfSub *struct{ YourName *string }
+		}{},
+		Log: struct {
+			SubLog       int
+			Directory    string
+			Filename     string
+			DedicatedArg string
+		}{},
+	}
 )
 
 func main() {
