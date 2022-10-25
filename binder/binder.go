@@ -1,6 +1,7 @@
 package binder
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"reflect"
@@ -255,11 +256,18 @@ func instFields(parent string, v reflect.Value, fc RegisterFunc) {
 			} else {
 				sub = sub + "." + bindName
 			}
+
+			switch fd.Interface().(type) {
+			case flag.Value:
+				goto finalizer
+			}
 			if t.Kind() == reflect.Struct {
 				instFields(sub, fd, fc)
 				continue
 			}
 			//
+
+		finalizer:
 			fc(parent, f, fd)
 		}
 	}
@@ -318,8 +326,14 @@ func wrapperOSEnv(f RegisterFunc) RegisterFunc {
 
 		val, ok := os.LookupEnv(envName)
 		if ok {
-			dst := fieldValue.Elem()
-			convertStringToType(val, fieldValue.Type(), &dst)
+			switch value := fieldValue.Interface().(type) {
+			case flag.Value:
+				value.Set(val)
+			default:
+				dst := fieldValue.Elem()
+				convertStringToType(val, fieldValue.Type(), &dst)
+			}
+
 		}
 	}
 }

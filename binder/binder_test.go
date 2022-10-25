@@ -44,6 +44,7 @@ func TestBinderUseEnv(t *testing.T) {
 		TestFieldSlice:  &[]string{},
 		TestFieldArray:  &[5]string{},
 		MyFlag:          &myTestFlagValue{},
+		MyMapFlag:       myTestMapFlagValue{},
 	}
 	err = BindArgsConf(&ir, "conf")
 	require.NoError(t, err, "bind args conf")
@@ -54,6 +55,7 @@ func TestBinderUseEnv(t *testing.T) {
 		// "conf.test_field_array":  "c",
 		"conf.my_flag.xds_target": "xds://xx.cluster.local:10001",
 		"conf.my_flag.bind":       "0:1000",
+		"conf.my_map":             `{"xds_c0": "xds://c0", "xds_c1": "xds://c1"}`,
 	} {
 		os.Setenv(k, v)
 	}
@@ -72,6 +74,12 @@ func TestBinderUseEnv(t *testing.T) {
 	assert.Equal(t, "0:1000", ir.MyFlag.Bind)
 	require.NotNil(t, ir.MyFlag.XDSTarget)
 	assert.Equal(t, "xds://xx.cluster.local:10001", *ir.MyFlag.XDSTarget)
+
+	require.NotNil(t, ir.MyMapFlag)
+	require.Contains(t, ir.MyMapFlag, "xds_c0")
+	require.Equal(t, "xds://c0", ir.MyMapFlag["xds_c0"])
+	require.Contains(t, ir.MyMapFlag, "xds_c1")
+	require.Equal(t, "xds://c1", ir.MyMapFlag["xds_c1"])
 
 	spew.Dump(ir)
 }

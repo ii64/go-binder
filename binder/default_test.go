@@ -11,6 +11,18 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type myTestMapFlagValue map[string]string
+
+var _ flag.Value = (myTestMapFlagValue)(nil)
+
+func (m myTestMapFlagValue) Set(v string) (err error) {
+	return json.Unmarshal([]byte(v), &m)
+}
+
+func (m myTestMapFlagValue) String() string {
+	return "{}"
+}
+
 type myTestFlagValue struct {
 	XDSTarget *string `json:"xds,omitempty" env:"xds_target"`
 	Bind      string  `json:"bind,omitempty" env:"bind"`
@@ -27,10 +39,11 @@ func (m *myTestFlagValue) String() string {
 }
 
 type myTestStruct struct {
-	TestFieldString *string          `arg:"myfield1" env:"test_field_string" usage:"the usage"`
-	TestFieldSlice  *[]string        `arg:"myfield2" env:"test_field_slice" usage:"the usage"`
-	TestFieldArray  *[5]string       `arg:"myfield3" env:"test_field_array" usage:"the usage"`
-	MyFlag          *myTestFlagValue `arg:"my_flag" bind:"my_flag" usage:"the usage"`
+	TestFieldString *string            `arg:"myfield1" env:"test_field_string" usage:"the usage"`
+	TestFieldSlice  *[]string          `arg:"myfield2" env:"test_field_slice" usage:"the usage"`
+	TestFieldArray  *[5]string         `arg:"myfield3" env:"test_field_array" usage:"the usage"`
+	MyFlag          *myTestFlagValue   `arg:"my_flag" bind:"my_flag" usage:"the usage"`
+	MyMapFlag       myTestMapFlagValue `arg:"my_map" bind:"my_map" env:"my_map" usage:"the usage"`
 }
 
 func TestFlagBinder(t *testing.T) {
@@ -45,6 +58,7 @@ func TestFlagBinder(t *testing.T) {
 		TestFieldSlice:  &[]string{},
 		TestFieldArray:  &[5]string{},
 		MyFlag:          &myTestFlagValue{},
+		MyMapFlag:       myTestMapFlagValue{},
 	}
 
 	val := reflect.ValueOf(ir)
@@ -87,6 +101,7 @@ func TestFlagBinder(t *testing.T) {
 		"-conf.myfield3", "hello world5",
 		"-conf.myfield3", "hello world6",
 		"-conf.my_flag", `{"xds": "xds://xx.cluster.local:10001", "bind": "0:1000"}`,
+		"-conf.my_map", `{"xds_c0": "xds://c0", "xds_c1": "xds://c1"}`,
 	})
 
 	require.NotNil(t, ir.TestFieldString)
@@ -100,6 +115,12 @@ func TestFlagBinder(t *testing.T) {
 	assert.Equal(t, "0:1000", ir.MyFlag.Bind)
 	require.NotNil(t, ir.MyFlag.XDSTarget)
 	assert.Equal(t, "xds://xx.cluster.local:10001", *ir.MyFlag.XDSTarget)
+
+	require.NotNil(t, ir.MyMapFlag)
+	require.Contains(t, ir.MyMapFlag, "xds_c0")
+	require.Equal(t, "xds://c0", ir.MyMapFlag["xds_c0"])
+	require.Contains(t, ir.MyMapFlag, "xds_c1")
+	require.Equal(t, "xds://c1", ir.MyMapFlag["xds_c1"])
 
 	spew.Dump(ir)
 }
