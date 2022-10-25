@@ -117,7 +117,7 @@ func newDefaultSliceVar(value reflect.Value) *defaultSliceVar {
 }
 
 func (s *defaultSliceVar) Set(value string) error {
-	val := convertStringToType(value, s.container.Elem())
+	val := convertStringToType(value, s.container.Elem(), nil)
 	s.value.Set(reflect.Append(s.value, val))
 	return nil
 }
@@ -142,7 +142,7 @@ func (s *defaultArrayVar) Set(value string) error {
 	if s.cur > int(s.container.Len()) {
 		return fmt.Errorf("array set exceeded container size")
 	}
-	val := convertStringToType(value, s.container.Elem())
+	val := convertStringToType(value, s.container.Elem(), nil)
 	s.value.Index(s.cur).Set(val)
 	s.cur++
 	return nil

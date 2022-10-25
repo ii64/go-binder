@@ -318,13 +318,13 @@ func wrapperOSEnv(f RegisterFunc) RegisterFunc {
 
 		val, ok := os.LookupEnv(envName)
 		if ok {
-			v := convertStringToType(val, fieldValue.Type())
-			fieldValue.Elem().Set(v)
+			dst := fieldValue.Elem()
+			convertStringToType(val, fieldValue.Type(), &dst)
 		}
 	}
 }
 
-func convertStringToType(s string, t reflect.Type) reflect.Value {
+func convertStringToType(s string, t reflect.Type, ref *reflect.Value) reflect.Value {
 	t, _ = UnwindType(t, false)
 	var ret interface{} = s
 	var err error
@@ -363,11 +363,28 @@ func convertStringToType(s string, t reflect.Type) reflect.Value {
 		ret = tmp
 	case reflect.String:
 		ret = s
+
+	case reflect.Slice: // array unsupported atm.
+		ct := t.Elem()
+		if ref != nil {
+			return convertStringToType(s, ct, ref)
+		}
+		panic(fmt.Sprintf("slice need a ref"))
+
 	default:
 		panic(fmt.Sprintf("unsupported type conversion (%s)", t))
 	}
 	if err != nil {
 		panic(fmt.Sprintf("type reformat failed. (%q as %s)", s, t))
 	}
-	return reflect.ValueOf(ret)
+	rval := reflect.ValueOf(ret)
+	if ref != nil {
+		switch ref.Kind() {
+		case reflect.Slice:
+			ref.Set(reflect.Append(*ref, rval))
+		default:
+			ref.Set(rval)
+		}
+	}
+	return rval
 }
