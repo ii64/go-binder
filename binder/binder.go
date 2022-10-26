@@ -33,7 +33,7 @@ type MappedConfiguration map[string]interface{}
 type LoadConfigFunc func(mc *MappedConfiguration) error
 type SaveConfigFunc func(mc *MappedConfiguration) error
 
-type RegisterFunc func(parent string, fieldType reflect.StructField, fieldValue reflect.Value)
+type RegisterFunc func(parent string, fieldType reflect.StructField, fieldValue reflect.Value) error
 
 type funcUpdater struct {
 	In  func()
@@ -89,26 +89,38 @@ func Init() (err error) {
 	// 2. args value            - tag "args"
 	// 3. env value             - tag "env"
 	// 4. configuration value   - from conf file
+
+	deferred := []struct {
+		k string
+		s *item
+	}{}
+
 	for k, s := range registered {
 		if s.bindEnvArgs {
-			defer addBindArgs(k, s)
+			deferred = append(deferred, struct {
+				k string
+				s *item
+			}{k, s})
 		}
 		if s.bindConf {
 			mappedConf[k] = s.val
 		}
 	}
 	var t MappedConfiguration
-	defer func() {
-		setBackMap(&mappedConf, t)
-		loadReupdate()
-	}()
-	defer func() {
-		if t == nil { // prevent nil t passed to setBackMap
-			t = MappedConfiguration{}
-		}
-	}()
+
 	if err = LoadConfig(&t); err != nil {
 		return
+	}
+	if t == nil { // prevent nil t passed to setBackMap
+		t = MappedConfiguration{}
+	}
+	setBackMap(&mappedConf, t)
+	loadReupdate()
+
+	for _, def := range deferred {
+		if err = addBindArgs(def.k, def.s); err != nil {
+			return
+		}
 	}
 	return
 }
@@ -205,20 +217,18 @@ func ifaceToStruct(ival, iorig reflect.Value) {
 	// spew.Dump(iorig.Interface())
 }
 
-func addBindArgs(key string, s *item) {
+func addBindArgs(key string, s *item) (err error) {
 	v := reflect.ValueOf(s.val)
-	_ = v
-	instFields(key, v, wrapperUnwind(wrapperOSEnv(RegisterCmdArgs)))
+	return instFields(key, v, wrapperOSEnv(RegisterCmdArgs))
 }
 
-func instFields(parent string, v reflect.Value, fc RegisterFunc) {
+func instFields(parent string, v reflect.Value, fc RegisterFunc) (err error) {
 	t := v.Type()
 	if t.Kind() == reflect.Ptr {
 		if v.IsNil() {
 			FillValue(v)
 		}
-		instFields(parent, v.Elem(), fc)
-		return
+		return instFields(parent, v.Elem(), fc)
 	}
 	if t.Kind() == reflect.Struct {
 		for i := 0; i < t.NumField(); i++ {
@@ -262,15 +272,20 @@ func instFields(parent string, v reflect.Value, fc RegisterFunc) {
 				goto finalizer
 			}
 			if t.Kind() == reflect.Struct {
-				instFields(sub, fd, fc)
+				if err = instFields(sub, fd, fc); err != nil {
+					return
+				}
 				continue
 			}
 			//
 
 		finalizer:
-			fc(parent, f, fd)
+			if err = fc(parent, f, fd); err != nil {
+				return
+			}
 		}
 	}
+	return
 }
 
 func loadReupdate() {
@@ -285,24 +300,13 @@ func saveReupdate() {
 	}
 }
 
-func wrapperUnwind(f RegisterFunc) RegisterFunc {
-	return func(parent string, fieldType reflect.StructField, fieldValue reflect.Value) {
-		defer f(parent, fieldType, fieldValue)
-
-		for fieldValue.Kind() == reflect.Ptr {
-			var t reflect.Value
-			if t = fieldValue.Elem(); t.Kind() != reflect.Ptr {
-				break
-			}
-			fieldValue = t
-		}
-
-	}
-}
-
 func wrapperOSEnv(f RegisterFunc) RegisterFunc {
-	return func(parent string, fieldType reflect.StructField, fieldValue reflect.Value) {
-		defer f(parent, fieldType, fieldValue)
+	return func(parent string, fieldType reflect.StructField, fieldValue reflect.Value) (err error) {
+		defer func(parent string, fieldType reflect.StructField, fieldValue reflect.Value) {
+			if err == nil {
+				err = f(parent, fieldType, fieldValue)
+			}
+		}(parent, fieldType, fieldValue)
 
 		environName := fieldType.Tag.Get("environ")
 		envName := fieldType.Tag.Get("env")
@@ -328,13 +332,14 @@ func wrapperOSEnv(f RegisterFunc) RegisterFunc {
 		if ok {
 			switch value := fieldValue.Interface().(type) {
 			case flag.Value:
-				value.Set(val)
+				return value.Set(val)
 			default:
 				dst := fieldValue.Elem()
 				convertStringToType(val, fieldValue.Type(), &dst)
 			}
 
 		}
+		return
 	}
 }
 

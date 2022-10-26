@@ -32,6 +32,27 @@ func initTest() *mem {
 	return m
 }
 
+func TestBinderInvalidData(t *testing.T) {
+	var err error
+	m := initTest()
+	m.memSave(&MappedConfiguration{})
+
+	ir := myTestStruct{
+		TestFieldString: new(string),
+		TestFieldSlice:  &[]string{},
+		TestFieldArray:  &[5]string{},
+		MyFlag:          &myTestFlagValue{},
+		MyMapFlag:       myTestMapFlagValue{},
+	}
+
+	err = BindArgsConf(&ir, "conf")
+	require.NoError(t, err)
+	os.Setenv("conf.my_map", `{`)
+
+	err = Init()
+	require.Error(t, err)
+}
+
 func TestBinderUseEnv(t *testing.T) {
 	var err error
 	m := initTest()
@@ -63,7 +84,7 @@ func TestBinderUseEnv(t *testing.T) {
 	err = Init()
 	require.NoError(t, err, "bind init")
 
-	In()
+	In() // necessary
 
 	require.NotNil(t, ir.TestFieldString)
 	assert.Equal(t, "hello world1", *ir.TestFieldString)

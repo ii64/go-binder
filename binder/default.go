@@ -8,7 +8,7 @@ import (
 	"unsafe"
 )
 
-func defaultRegisterCmdArgsFlagStd(parent string, fieldType reflect.StructField, fieldValue reflect.Value) {
+func defaultRegisterCmdArgsFlagStd(parent string, fieldType reflect.StructField, fieldValue reflect.Value) (err error) {
 	// fmt.Printf("ARGS %s: %s [%s] has value %+#v  [%s]\n", parent, fieldType.Name, fieldType.Type, fieldValue, fieldType.Tag)
 	argxName := fieldType.Tag.Get("argx")
 	argName := fieldType.Tag.Get("arg")
@@ -96,6 +96,7 @@ func defaultRegisterCmdArgsFlagStd(parent string, fieldType reflect.StructField,
 		}
 	}
 
+	return
 }
 
 func defaultLoadConfig(mc *MappedConfiguration) error {
